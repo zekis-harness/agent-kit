@@ -18,8 +18,8 @@ const requireDenylist = args.includes('--require-denylist');
 
 const ALLOWED_EXT = new Set(['.md', '.json', '.jsonl', '.mjs', '.js', '.ts', '.tsx', '.css', '.html', '.ps1', '.psm1', '.sh', '.py', '.yml', '.yaml', '.toml', '.txt', '.lock']);
 const ALLOWED_NAMES = new Set(['LICENSE', '.gitignore', '.gitattributes', 'pre-push', 'pre-commit', 'CODEOWNERS']);
-// The org name is public by choice; strip it before matching so it does not trip the name entries.
-const ALLOW = /zekis-harness/gi;
+// The org name (and its env-var form) is public by choice; strip it before matching so it does not trip the name entries.
+const ALLOW = new RegExp('zekis-harness'.replace('-', '[-_]'), 'gi');
 const clean = (s) => s.replace(ALLOW, '');
 const NOREPLY = /(^|\+)[^@\s]+@users\.noreply\.github\.com$|^noreply@github\.com$/i;
 
