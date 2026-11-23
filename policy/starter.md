@@ -31,7 +31,7 @@ Your own instruction files add detail; they never need to repeat this.
 
 ## Writing
 
-- Plain words, full sentences, no filler or preamble. No em dashes.
+- Plain words, full sentences, no filler or preamble.
 
 ## Browser
 
