@@ -6,9 +6,16 @@ if (-not $env:AGENT_KIT_EVAL_MANIFEST) { throw 'Requires an operator-prepared sy
 if ($forward -contains '--allow-all' -or $forward -contains '--allow-all-tools' -or $forward -contains '--allow-all-paths') {
     throw 'The scoped eval adapter cannot be used with unrestricted permissions.'
 }
+function Get-RealPath([string]$Path) {
+    if ($IsWindows) { return [IO.Path]::GetFullPath($Path) }
+    # macOS temp folders sit behind a /var -> /private/var symlink; compare resolved paths.
+    $real = & realpath $Path 2>$null
+    if ($LASTEXITCODE -ne 0) { return [IO.Path]::GetFullPath($Path) }
+    $real.Trim()
+}
 $manifest = Get-Content $env:AGENT_KIT_EVAL_MANIFEST -Raw | ConvertFrom-Json
-$cwd = (Get-Location).Path
-$item = @($manifest.items | Where-Object { [IO.Path]::GetFullPath($_.cwd) -eq $cwd })
+$cwd = Get-RealPath (Get-Location).Path
+$item = @($manifest.items | Where-Object { (Get-RealPath $_.cwd) -eq $cwd })
 if ($item.Count -ne 1 -or -not $item[0].write_files) { throw "No unique synthetic write allowlist for $cwd" }
 $forward += @('--available-tools', 'view', 'glob', 'grep', 'apply_patch',
     '--deny-tool', 'shell', '--deny-tool', 'url', '--disallow-temp-dir', '--sync-session=off', '--add-dir', $cwd)

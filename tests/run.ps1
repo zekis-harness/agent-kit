@@ -131,7 +131,7 @@ try {
     Assert ((Get-Content (Join-Path $sb.Home '.claude/skills/alpha/SKILL.md') -Raw) -eq "alpha overlay`n") 'an overlay skill replaces a kit skill of the same name'
 
     Write-File (Join-Path $sb.Kit 'skills/beta/kit.json') '{ "bogus": 1 }'
-    Remove-Item -Recurse (Join-Path $sb.Home '.claude/skills')
+    Remove-Item -Recurse -Force (Join-Path $sb.Home '.claude/skills')
     $r = Invoke-Kit $sb 'sync.ps1'
     Assert ($r.Code -ne 0 -and -not (Test-Path (Join-Path $sb.Home '.claude/skills'))) 'an invalid kit.json stops sync before any write'
 } finally { Remove-Item -Recurse -Force $sb.Root }

@@ -1,0 +1,14 @@
+{
+  "name": "zekis-harness",
+  "owner": { "name": "zekis-harness", "url": "https://github.com/zekis-harness" },
+  "metadata": { "description": "Plugins from zekis-harness." },
+  "plugins": [
+    {
+      "name": "agent-kit",
+      "source": "./",
+      "description": "Skills and hooks for cheaper, steadier coding agents: delegation, handoffs, real-Chrome browsing, UI rules.",
+      "version": "0.1.0",
+      "license": "MIT"
+    }
+  ]
+}

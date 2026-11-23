@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 $kit = Split-Path $PSScriptRoot -Parent
 $root = Join-Path ([IO.Path]::GetTempPath()) ('kit-scope-test-' + [guid]::NewGuid().ToString('N'))
 $null = New-Item -ItemType Directory $root
+if (-not $IsWindows) { $root = (& realpath $root).Trim() }
 $oldPath = $env:PATH
 $oldManifest = $env:AGENT_KIT_EVAL_MANIFEST
 $oldSession = $env:AGENT_KIT_EVAL_SESSION_FILE
@@ -33,7 +34,7 @@ try {
         'x' | & pwsh -NoProfile -File (Join-Path $kit 'bin\scoped-eval-copilot.ps1')
         $argsSeen = @(Get-Content $env:KIT_SCOPE_TEST_OUT -Raw | ConvertFrom-Json)
         Assert ($argsSeen -contains '--resume' -and $argsSeen[-1] -eq '12345678-1234-1234-1234-123456789abc') 'resume only the explicit benchmark session'
-        @{items=@(@{cwd=$root;write_files=@('..\outside.txt')})} | ConvertTo-Json -Depth 5 | Set-Content $env:AGENT_KIT_EVAL_MANIFEST
+        @{items=@(@{cwd=$root;write_files=@('../outside.txt')})} | ConvertTo-Json -Depth 5 | Set-Content $env:AGENT_KIT_EVAL_MANIFEST
         'x' | & pwsh -NoProfile -File (Join-Path $kit 'bin\scoped-eval-copilot.ps1') 2>&1 | Out-Null
         Assert ($LASTEXITCODE -ne 0) 'reject a write allowlist escaping the fixture repository'
     } finally { Pop-Location }
