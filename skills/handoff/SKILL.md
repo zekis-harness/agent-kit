@@ -7,7 +7,7 @@ Write a handoff so a fresh session can continue without this conversation.
 
 ## When
 
-A handoff is not free: the new session re-reads code and repeats work. Benchmark: handing off mid-way through a medium feature (60-85k tokens of context) cost 34% more than finishing in one session ($2.00 vs $1.49, same quality), and the new session made as many calls as the whole single-session run.
+A handoff is not free: the new session re-reads code and repeats work. Benchmark: handing off mid-way through a medium feature (60-85k tokens of context) cost 34% more than finishing in one session ($2.00 vs $1.49, same quality).
 
 - Hand off at a task boundary (card, PR, or subtask done), not mid-step and not by percentage.
 - Do it once context passes about 150k tokens and real work remains; every turn rereads the whole context.
@@ -39,7 +39,7 @@ If the context guard fired or the user asked for auto-continue, launch the next 
 pwsh -NoProfile -File <kit>/bin/continue.ps1 -Handoff <absolute path> -Cwd <repo> [-Harness claude|codex|copilot] [-Model sonnet]
 ```
 
-`<kit>` is the `kit` path in `~/.zekis-harness/config.json` (default `~/zekis-harness`). If no terminal can be opened, print the resume line instead.
+`<kit>` is `kit` in `~/.zekis-harness/config.json` (default `~/zekis-harness`).
 
 It opens a new terminal tab whose fresh session reads the handoff. Do no further work in this session.
 
