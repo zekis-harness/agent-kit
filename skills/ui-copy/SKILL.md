@@ -17,7 +17,7 @@ The interface shows data and actions. Text that explains, narrates or repeats wh
 - Decorative metadata nobody acts on ("Week 47").
 - Qualifiers on labels ("Owed today, estimated" becomes "Owed today").
 - Usage hints over interactive views ("Tap a goal to open it, tap + to expand it"). Affordances should be obvious from the controls.
-- Coaching and encouragement in empty states. "Nothing closed." is enough; skip the "Captures you close wait here until..." tail.
+- Coaching and encouragement in empty states. "Nothing closed." is enough; skip the "Tasks you finish will show up here so you can..." tail.
 - The same fact shown twice (a confirmed date in the header and on every row).
 
 ## Keep

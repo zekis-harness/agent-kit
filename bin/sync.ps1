@@ -6,19 +6,17 @@ Installs the kit's skills and (optionally) its policy into the agents listed in 
 Reads config.json from $env:ZEKIS_HARNESS_HOME (default ~/.zekis-harness). Without it, prints how to run
 bin/setup.ps1 and exits 1.
 
-Skills: <kit>/skills, then <overlay>/skills for each entry of "overlays" (a later skill with the same name
-wins), are installed into the skills root of each configured harness only: ~/.claude/skills,
+Skills: <kit>/skills are installed into the skills root of each configured harness only: ~/.claude/skills,
 ~/.codex/skills, <copilot home>/skills. The copilot home is $env:COPILOT_HOME when set and non-empty,
 otherwise ~/.copilot. A skill folder may hold a kit.json (optional keys: group, harnesses, tracked, needs)
 to limit its harnesses or the files that ship.
 
-Each skills root keeps .agent-kit-skills.json: per skill, the relative path and sha256 of every file the
+Each skills root keeps .zekis-harness-skills.json: per skill, the relative path and sha256 of every file the
 kit installed. A file edited in place (it differs from both the source and the record) is left alone unless
 -Force. A file is deleted only when it is in the record, no longer shipped, and unchanged; files not in the
 record are never touched. An invalid kit.json stops sync before any write.
 
-Policy: when config policy.starter is true, <kit>/policy/starter.md, then each policy.extra file and each
-<overlay>/policy/*.md, is rendered between zekis-harness markers in ~/.claude/CLAUDE.md,
+Policy: when config policy.starter is true, <kit>/policy/starter.md, then each policy.extra file, is rendered between zekis-harness markers in ~/.claude/CLAUDE.md,
 ~/.codex/AGENTS.md and <copilot home>/copilot-instructions.md for the configured harnesses. Text outside the
 markers is never touched. With no policy content (starter false, nothing extra) the marked block is removed.
 
@@ -51,7 +49,6 @@ $config = try { Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json -As
 if ($config -isnot [Collections.IDictionary]) { throw "$configPath is not a valid JSON object; fix it or re-run bin/setup.ps1" }
 $harnesses = @($config.harnesses)
 if (-not $harnesses.Count -or ($harnesses | Where-Object { $_ -notin $harnessNames })) { throw "${configPath}: harnesses must list claude, codex, copilot" }
-$overlays = @($config.overlays | Where-Object { $_ })
 $policyCfg = if ($config.policy -is [Collections.IDictionary]) { $config.policy } else { @{} }
 
 $begin = '<!-- zekis-harness:begin (managed by bin/sync.ps1; edit outside these markers) -->'
@@ -63,12 +60,6 @@ if ($policyCfg.starter -eq $true) { $policyFiles += Join-Path $kit 'policy/start
 foreach ($extra in @($policyCfg.extra | Where-Object { $_ })) {
     $policyFiles += if ([IO.Path]::IsPathRooted($extra)) { $extra } else { Join-Path $configHome $extra }
 }
-foreach ($overlay in $overlays) {
-    $dir = Join-Path $overlay 'policy'
-    if (Test-Path -LiteralPath $dir -PathType Container) {
-        $policyFiles += @(Get-ChildItem -LiteralPath $dir -Filter '*.md' -File | Sort-Object Name | ForEach-Object FullName)
-    }
-}
 $pieces = @(foreach ($file in $policyFiles) {
     if (-not (Test-Path -LiteralPath $file -PathType Leaf)) { throw "policy file not found: $file" }
     $text = ([IO.File]::ReadAllText($file)).Trim()
@@ -77,8 +68,7 @@ $pieces = @(foreach ($file in $policyFiles) {
 $block = if ($pieces.Count) { "$begin`n$($pieces -join "`n`n")`n$end" }
 
 $copilotHome = if ($env:COPILOT_HOME) { $env:COPILOT_HOME } else { Join-Path $UserHome '.copilot' }
-$legacyManifestName = '.agent-kit-skills'
-$recordName = '.agent-kit-skills.json'
+$recordName = '.zekis-harness-skills.json'
 $allTargets = @{
     claude = Join-Path $UserHome '.claude/CLAUDE.md'
     codex = Join-Path $UserHome '.codex/AGENTS.md'
@@ -154,17 +144,8 @@ function Read-Record([string]$root) {
     $data
 }
 
-# Everything that can stop sync is read before the first write. The kit comes first, overlays after it.
-$byName = [ordered]@{}
-foreach ($source in @($kit) + $overlays) {
-    $skillsDir = Join-Path $source 'skills'
-    if (-not (Test-Path -LiteralPath $skillsDir -PathType Container)) {
-        if ($source -ne $kit) { Write-Warning "overlay has no skills folder: $source" }
-        continue
-    }
-    foreach ($dir in Get-ChildItem -LiteralPath $skillsDir -Directory | Sort-Object Name) { $byName[$dir.Name] = Read-KitSkill $dir }
-}
-$kitSkills = @($byName.Values)
+# Everything that can stop sync is read before the first write.
+$kitSkills = @(Get-ChildItem -LiteralPath (Join-Path $kit 'skills') -Directory | Sort-Object Name | ForEach-Object { Read-KitSkill $_ })
 $records = @{}
 foreach ($h in $harnesses) { $records[$h] = Read-Record $skillRoots[$h] }
 
@@ -291,16 +272,11 @@ foreach ($h in $harnesses) {
     }
     $wanted = ($sorted | ConvertTo-Json -Depth 3) + "`n"
     $recordPath = Join-Path $root $recordName
-    $legacy = Join-Path $root $legacyManifestName
     $current = if (Test-Path -LiteralPath $recordPath) { [IO.File]::ReadAllText($recordPath) } else { $null }
-    if ($current -ne $wanted -and ($null -ne $current -or $new.Count -or (Test-Path -LiteralPath $legacy))) {
+    if ($current -ne $wanted -and ($null -ne $current -or $new.Count)) {
         New-Item -ItemType Directory -Force $root | Out-Null
         [IO.File]::WriteAllText($recordPath, $wanted)
         Write-Output "updated $recordPath"
-    }
-    if (Test-Path -LiteralPath $legacy -PathType Leaf) {
-        Remove-Item -LiteralPath $legacy -Force
-        Write-Output "removed $legacy"
     }
 }
 

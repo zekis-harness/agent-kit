@@ -24,9 +24,6 @@ Switch every hook off.
 .PARAMETER HeavyJob
 Command template that wraps heavy work (builds, full test runs). Empty string clears it.
 
-.PARAMETER Overlay
-Path of an extra kit-shaped folder (skills/, policy/*.md) installed after the kit. Pass several as -Overlay a,b (PowerShell rejects a repeated parameter under -File).
-
 .PARAMETER Yes
 Accept the detected or existing value for every question not given as a flag.
 
@@ -46,7 +43,6 @@ param(
     [string[]]$Hooks,
     [switch]$NoHooks,
     [string]$HeavyJob,
-    [string[]]$Overlay,
     [switch]$Yes,
     [switch]$WireHooks,
     [switch]$NoSync,
@@ -106,13 +102,6 @@ if ($PSBoundParameters.ContainsKey('HeavyJob')) { $heavy = $HeavyJob }
 elseif ($interactive) { $heavy = Read-Answer 'Command that wraps heavy work such as builds (blank for none)' $defaultHeavy; if ($heavy -eq $defaultHeavy -and -not $defaultHeavy) { $heavy = '' } }
 else { $heavy = $defaultHeavy }
 
-# Overlays
-$defaultOverlays = @($existing.overlays | Where-Object { $_ })
-if ($PSBoundParameters.ContainsKey('Overlay')) { $overlays = Split-List $Overlay }
-elseif ($interactive) { $overlays = Split-List (Read-Answer 'Overlay folders with private skills or policy, comma separated (blank for none)' ($defaultOverlays -join ',')) }
-else { $overlays = $defaultOverlays }
-$overlays = @($overlays | ForEach-Object { [IO.Path]::GetFullPath($_) })
-
 $config = [ordered]@{}
 foreach ($key in $existing.Keys) { $config[$key] = $existing[$key] }
 $config.kit = $kit
@@ -126,7 +115,6 @@ $hookConfig = [ordered]@{}
 foreach ($name in $hookNames) { $hookConfig[$name] = $name -in $chosenHooks }
 $config.hooks = $hookConfig
 $config.heavyJob = if ($heavy) { $heavy } else { $null }
-$config.overlays = $overlays
 if (-not $config.Contains('browser')) { $config.browser = [ordered]@{ servers = @() } }
 
 New-Item -ItemType Directory -Force $configHome | Out-Null
