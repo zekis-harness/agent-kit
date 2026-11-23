@@ -1,0 +1,16 @@
+#!/bin/sh
+# Runs the leak scan before every push. Point LEAK_DENYLIST_FILE at your private denylist
+# (one term per line) to check content too; without it only file types and commit emails are checked.
+# Enable once per clone: git config core.hooksPath .githooks
+root=$(git rev-parse --show-toplevel)
+range=""
+while read -r _local_ref local_sha _remote_ref remote_sha; do
+  [ "$local_sha" = 0000000000000000000000000000000000000000 ] && continue
+  if [ "$remote_sha" = 0000000000000000000000000000000000000000 ]; then
+    base=$(git merge-base "$local_sha" origin/main 2>/dev/null) || base=""
+  else
+    base=$remote_sha
+  fi
+  [ -n "$base" ] && range="--range $base..$local_sha"
+done
+exec node "$root/.github/scripts/leak-scan.mjs" --repo "$root" $range

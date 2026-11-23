@@ -1,0 +1,47 @@
+name: leak-scan
+
+# pull_request_target runs the scanner from the base branch, so a pull request cannot weaken
+# the scan it is checked by. The pull request's files are only read as data, never executed.
+on:
+  pull_request_target:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  leak-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the scanner (base branch)
+        uses: actions/checkout@v4
+        with:
+          path: guard
+          persist-credentials: false
+      - name: Check out the code to scan
+        uses: actions/checkout@v4
+        with:
+          path: target
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          repository: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Denylist, file types, commit emails
+        env:
+          LEAK_DENYLIST: ${{ secrets.LEAK_DENYLIST }}
+          BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          range=""
+          if [ -n "$BASE_SHA" ] && [ "$BASE_SHA" != "0000000000000000000000000000000000000000" ]; then
+            git -C target fetch -q "https://github.com/${{ github.repository }}" "$BASE_SHA"
+            range="--range $BASE_SHA..$HEAD_SHA"
+          fi
+          node guard/.github/scripts/leak-scan.mjs --repo target --require-denylist $range
+      - name: Secrets (gitleaks)
+        run: docker run --rm -v "$PWD/target:/repo" zricethezav/gitleaks:latest detect --source /repo --redact --no-banner -v
