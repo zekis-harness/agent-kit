@@ -36,11 +36,11 @@ function New-Sandbox {
     [pscustomobject]@{ Root = $root; Kit = $kit; Home = $userHome; Config = Join-Path $userHome '.zekis-harness/config.json' }
 }
 
-function Set-Config($sb, [string[]]$harnesses = @('claude', 'codex'), [bool]$starter = $false, [string[]]$overlays = @(), [string[]]$extra = @()) {
+function Set-Config($sb, [string[]]$harnesses = @('claude', 'codex'), [bool]$starter = $false, [string[]]$extra = @()) {
     $cfg = [ordered]@{
         kit = $sb.Kit; harnesses = $harnesses; policy = [ordered]@{ starter = $starter; extra = $extra }
         hooks = [ordered]@{ contextGuard = $true; keepWarm = $true; autoSync = $true }
-        heavyJob = $null; overlays = $overlays; browser = [ordered]@{ servers = @() }
+        heavyJob = $null; browser = [ordered]@{ servers = @() }
     }
     Write-File $sb.Config ($cfg | ConvertTo-Json -Depth 6)
 }
@@ -69,7 +69,7 @@ try {
     Assert (Test-Path (Join-Path $sb.Home '.codex/skills/alpha/extra.txt')) 'sync installs every file of a skill'
     Assert (-not (Test-Path (Join-Path $sb.Home '.copilot'))) 'sync leaves unconfigured harnesses alone'
     Assert ((Test-Path (Join-Path $skills 'beta/SKILL.md')) -and -not (Test-Path (Join-Path $sb.Home '.codex/skills/beta'))) 'kit.json harnesses limits where a skill installs'
-    $record = Read-Json (Join-Path $skills '.agent-kit-skills.json')
+    $record = Read-Json (Join-Path $skills '.zekis-harness-skills.json')
     $sha = (Get-FileHash (Join-Path $skills 'alpha/SKILL.md') -Algorithm SHA256).Hash.ToLowerInvariant()
     Assert ($record.alpha['SKILL.md'] -eq $sha) 'manifest records the sha256 of each installed file'
     Assert ((Invoke-Kit $sb 'sync.ps1' @('-Check')).Code -eq 0) 'check passes right after sync'
@@ -113,25 +113,17 @@ try {
     Assert (-not (Test-Path (Join-Path $skills 'beta'))) 'sync removes a whole skill the kit dropped when unchanged'
     Assert (-not (Test-Path (Join-Path $sb.Home '.copilot'))) 'removing skills creates nothing for unconfigured harnesses'
 
-    Write-File (Join-Path $skills '.agent-kit-skills.json') '{ "ghost": { "../escape.txt": "00" } }'
+    Write-File (Join-Path $skills '.zekis-harness-skills.json') '{ "ghost": { "../escape.txt": "00" } }'
     Write-File (Join-Path $skills '../escape.txt') "keep`n"
     Invoke-Kit $sb 'sync.ps1' | Out-Null
     Assert (Test-Path (Join-Path $sb.Home '.claude/escape.txt')) 'a record entry cannot delete outside its skills root'
 } finally { Remove-Item -Recurse -Force $sb.Root }
 
-# --- sync: overlays and invalid kit.json -------------------------------------------------------
+# --- sync: invalid kit.json -------------------------------------------------------------------
 $sb = New-Sandbox
 try {
-    $overlay = Join-Path $sb.Root 'overlay'
-    Write-File (Join-Path $overlay 'skills/gamma/SKILL.md') "gamma`n"
-    Write-File (Join-Path $overlay 'skills/alpha/SKILL.md') "alpha overlay`n"
-    Set-Config $sb @('claude') $false @($overlay)
-    Invoke-Kit $sb 'sync.ps1' | Out-Null
-    Assert (Test-Path (Join-Path $sb.Home '.claude/skills/gamma/SKILL.md')) 'sync installs overlay skills'
-    Assert ((Get-Content (Join-Path $sb.Home '.claude/skills/alpha/SKILL.md') -Raw) -eq "alpha overlay`n") 'an overlay skill replaces a kit skill of the same name'
-
+    Set-Config $sb @('claude')
     Write-File (Join-Path $sb.Kit 'skills/beta/kit.json') '{ "bogus": 1 }'
-    Remove-Item -Recurse -Force (Join-Path $sb.Home '.claude/skills')
     $r = Invoke-Kit $sb 'sync.ps1'
     Assert ($r.Code -ne 0 -and -not (Test-Path (Join-Path $sb.Home '.claude/skills'))) 'an invalid kit.json stops sync before any write'
 } finally { Remove-Item -Recurse -Force $sb.Root }
@@ -164,24 +156,22 @@ try {
     Assert (-not (Test-Path $agents)) 'starter off deletes a file that held only the block'
 
     $extra = Join-Path $sb.Root 'extra.md'
-    $overlay = Join-Path $sb.Root 'overlay'
     Write-File $extra "Extra rule.`n"
-    Write-File (Join-Path $overlay 'policy/one.md') "Overlay rule.`n"
-    Set-Config $sb @('claude') $true @($overlay) @($extra)
+    Set-Config $sb @('claude') $true @($extra)
     Invoke-Kit $sb 'sync.ps1' | Out-Null
     $text = Get-Content $claude -Raw
-    Assert ($text.IndexOf('Rule one.') -lt $text.IndexOf('Extra rule.') -and $text.IndexOf('Extra rule.') -lt $text.IndexOf('Overlay rule.')) 'policy renders starter, then extra files, then overlay policy'
+    Assert ($text.IndexOf('Rule one.') -ge 0 -and $text.IndexOf('Rule one.') -lt $text.IndexOf('Extra rule.')) 'policy renders starter, then extra files'
 } finally { Remove-Item -Recurse -Force $sb.Root }
 
 # --- setup: non-interactive config output ------------------------------------------------------
 $sb = New-Sandbox
 try {
-    $r = Invoke-Kit $sb 'setup.ps1' @('-Yes', '-Harnesses', 'claude,codex', '-StarterPolicy:$false', '-Hooks', 'contextGuard,keepWarm', '-HeavyJob', 'runner {cmd}', '-Overlay', $sb.Root, '-NoSync')
+    $r = Invoke-Kit $sb 'setup.ps1' @('-Yes', '-Harnesses', 'claude,codex', '-StarterPolicy:$false', '-Hooks', 'contextGuard,keepWarm', '-HeavyJob', 'runner {cmd}', '-NoSync')
     $cfg = Read-Json $sb.Config
     Assert ($r.Code -eq 0 -and $cfg.kit -eq $sb.Kit) 'setup writes kit as the absolute path of its own repo'
     Assert (($cfg.harnesses -join ',') -eq 'claude,codex') 'setup writes the chosen harnesses'
     Assert ($cfg.policy.starter -eq $false -and $cfg.hooks.contextGuard -eq $true -and $cfg.hooks.keepWarm -eq $true -and $cfg.hooks.autoSync -eq $false) 'setup writes the policy and hook switches'
-    Assert ($cfg.heavyJob -eq 'runner {cmd}' -and $cfg.overlays.Count -eq 1 -and $cfg.browser.servers.Count -eq 0) 'setup writes heavyJob, overlays and a browser stub'
+    Assert ($cfg.heavyJob -eq 'runner {cmd}' -and $cfg.browser.servers.Count -eq 0) 'setup writes heavyJob and a browser stub'
     $profilePath = Join-Path $sb.Home '.zekis-harness/profile.md'
     Assert ((Get-Content $profilePath -Raw) -match '## About' -and (Get-Content $profilePath -Raw) -match '## UI style' -and (Get-Content $profilePath -Raw) -match '## Browser accounts') 'setup creates profile.md with headings'
     Assert (-not (Test-Path (Join-Path $sb.Home '.claude'))) '-NoSync writes nothing into the agents'
@@ -192,7 +182,7 @@ try {
     Invoke-Kit $sb 'setup.ps1' @('-Yes', '-Harnesses', 'claude', '-StarterPolicy', '-NoHooks', '-HeavyJob', '', '-NoSync') | Out-Null
     $cfg = Read-Json $sb.Config
     Assert (($cfg.harnesses -join ',') -eq 'claude' -and $cfg.policy.starter -eq $true -and $cfg.hooks.contextGuard -eq $false -and $null -eq $cfg.heavyJob) 're-running setup updates answers'
-    Assert ($cfg.browser.servers.Count -eq 1 -and $cfg.overlays.Count -eq 1) 're-running setup keeps settings it was not asked about'
+    Assert ($cfg.browser.servers.Count -eq 1) 're-running setup keeps settings it was not asked about'
     Assert ((Get-Content $profilePath -Raw) -eq "Mine.`n") 're-running setup keeps an existing profile.md'
 
     $r = Invoke-Kit $sb 'setup.ps1' @('-Yes', '-Harnesses', 'claude', '-StarterPolicy')

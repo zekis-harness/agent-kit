@@ -8,10 +8,10 @@ A kit anyone can install into their coding agents (Claude Code, Codex, Copilot C
 
 - The repo is generic. Facts about one person (names, accounts, browser profiles, paths, employers, schools) never go in a tracked file.
 - Per-person data lives outside the repo, in `~/.zekis-harness/`:
-  - `config.json`: machine settings (which agents, which hooks, tool paths, browser profiles, overlays). Written by `bin/setup.ps1` or the `setup` skill.
+  - `config.json`: machine settings (which agents, which hooks, tool paths, browser profiles). Written by `bin/setup.ps1` or the `setup` skill.
   - `profile.md`: free-form facts and preferences skills may read (style overrides, account notes). Never committed anywhere.
 - Skills say "the user", not a name, and read `profile.md` when it exists.
-- Private skills belong in a separate private repo listed under `overlays` in `config.json`; `bin/sync.ps1` installs the kit first, then each overlay. Nothing copies files from an overlay into this repo.
+- This kit stands alone. It is not a base layer for anyone's private kit, it has no overlay or import mechanism, and nothing copies files between it and another repo. Personal skills live in their own repo with their own install.
 
 ### Guard
 
@@ -33,4 +33,4 @@ PowerShell 7 (`pwsh`) runs on Windows, macOS and Linux; hooks are POSIX `sh`/`ba
 
 ## Starter policy
 
-`policy/starter.md` is the short rulebook the skills assume (git through PRs, delegate by cost, hand off past about 150k tokens, plain writing). It is opt-in: `config.json` `policy.starter: true` makes `sync.ps1` render it between markers in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.copilot/copilot-instructions.md`. Text outside the markers is the user's and is never touched. `policy.extra` lists more policy files (for example from an overlay) appended after it.
+`policy/starter.md` is the short rulebook the skills assume (git through PRs, delegate by cost, hand off past about 150k tokens, plain writing). It is opt-in: `config.json` `policy.starter: true` makes `sync.ps1` render it between markers in `~/.claude/CLAUDE.md`, `~/.codex/AGENTS.md` and `~/.copilot/copilot-instructions.md`. Text outside the markers is the user's and is never touched. `policy.extra` lists more policy files of the user's own, appended after it.

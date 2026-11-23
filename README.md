@@ -54,7 +54,7 @@ Needs: git, Node 22+, PowerShell 7 (`pwsh`, on Windows, macOS and Linux).
 
 Everything about you stays on your machine in `~/.zekis-harness/`:
 
-- `config.json`: which agents you use, starter policy on or off, which hooks, an optional wrapper for heavy jobs, browser profiles, and `overlays` (folders of your own private skills and policy that sync installs after the kit).
+- `config.json`: which agents you use, starter policy on or off, which hooks, an optional wrapper for heavy jobs, and browser profiles.
 - `profile.md`: facts and preferences skills may read, such as your UI style or which Chrome profile holds which account.
 
 Run `setup.ps1` again to change answers. `bin/sync.ps1 -Check` shows drift; a skill file you edited in place is reported and left alone.
