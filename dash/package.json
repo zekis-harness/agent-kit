@@ -1,0 +1,22 @@
+{
+  "name": "usage-dash",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dash": "bun run src/server.ts",
+    "index": "bun run src/indexer.ts",
+    "test": "bun test",
+    "typecheck": "tsc",
+    "check-prices": "bun run src/check-prices.ts"
+  },
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
+  },
+  "devDependencies": {
+    "@types/bun": "^1.4.4",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "typescript": "^7.0.2"
+  }
+}
