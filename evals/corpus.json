@@ -1,0 +1,68 @@
+[
+  {
+    "id": "rename",
+    "writes": ["math.mjs", "invoice.mjs"],
+    "brief": "Rename the exported function calcTotal to sumPrices in math.mjs and its consumer invoice.mjs. Remove the old export; preserve behavior.",
+    "files": {
+      "math.mjs": "export function calcTotal(prices) { return prices.reduce((a, b) => a + b, 0); }\n",
+      "invoice.mjs": "import { calcTotal } from './math.mjs';\nexport const invoice = prices => calcTotal(prices);\n"
+    }
+  },
+  {
+    "id": "empty-average",
+    "writes": ["average.mjs", "average.test.mjs"],
+    "brief": "Fix average([]) to return null, preserving arithmetic means for nonempty numeric arrays. Add a node:test regression test in average.test.mjs.",
+    "files": { "average.mjs": "export const average = xs => xs.reduce((a, b) => a + b, 0) / xs.length;\n" }
+  },
+  {
+    "id": "stable-unique",
+    "writes": ["unique.mjs", "unique.test.mjs"],
+    "brief": "Implement unique(xs) in unique.mjs: keep the first occurrence of each string, preserving order and case. Do not mutate input. Add node:test coverage in unique.test.mjs.",
+    "files": { "unique.mjs": "export function unique(xs) { throw new Error('not implemented'); }\n" }
+  },
+  {
+    "id": "search",
+    "writes": ["findings.json"],
+    "brief": "Inspect the routes and write findings.json containing exactly the alphabetically sorted route names whose handlers call audit (direct calls only), under key audited. Do not change source files.",
+    "files": {
+      "routes.mjs": "import { audit } from './audit.mjs';\nexport function zebra() { audit('z'); }\nexport function alpha() { return 'audit is not called'; }\nexport function beta() { audit('b'); }\n",
+      "audit.mjs": "export function audit(value) { return value; }\n"
+    }
+  },
+  {
+    "id": "docs",
+    "writes": ["usage.md"],
+    "brief": "Create usage.md documenting actual parsePort behavior, including default 8080, valid range 1-65535, invalid values throwing RangeError, and a working ESM import example. Do not change port.mjs.",
+    "files": { "port.mjs": "export function parsePort(value = '8080') { if (!/^\\d+$/.test(value) || +value < 1 || +value > 65535) throw new RangeError('port'); return +value; }\n" }
+  },
+  {
+    "id": "debug-clock",
+    "writes": ["expiry.mjs", "expiry.test.mjs"],
+    "brief": "Fix the flaky expiry boundary: expired(expiry, now) should return true exactly when now >= expiry. Make the current time injectable, defaulting to Date.now(). Add deterministic node:test cases in expiry.test.mjs; do not use sleeps.",
+    "files": { "expiry.mjs": "export function expired(expiry) { return Date.now() > expiry; }\n" }
+  },
+  {
+    "id": "csv",
+    "writes": ["csv.mjs", "csv.test.mjs"],
+    "brief": "Implement csvCell(value) for string input: quote cells containing comma, double quote, CR or LF, doubling embedded double quotes; otherwise return unchanged. Add node:test coverage in csv.test.mjs.",
+    "files": { "csv.mjs": "export function csvCell(value) { return value; }\n" }
+  },
+  {
+    "id": "path-prefix",
+    "writes": ["child.mjs", "child.test.mjs"],
+    "brief": "Fix isChild(root, candidate) in child.mjs for normalized POSIX absolute paths: root itself is not a child, descendants are, sibling prefixes are not. Root '/' contains every other absolute path. Do not import platform-dependent path helpers. Add node:test cases in child.test.mjs.",
+    "files": { "child.mjs": "export const isChild = (root, candidate) => candidate.startsWith(root);\n" }
+  },
+  {
+    "id": "pagination",
+    "writes": ["page.mjs", "page.test.mjs"],
+    "brief": "Implement page(items, offset, limit): return a slice, without mutating input. Offset and limit must be nonnegative integers; otherwise throw RangeError. Add node:test cases in page.test.mjs.",
+    "files": { "page.mjs": "export function page(items, offset, limit) { return items; }\n" }
+  },
+  {
+    "id": "config-merge",
+    "writes": ["config.mjs", "config.test.mjs"],
+    "brief": "Implement mergeConfig(defaults, overrides): shallow merge using only override values that are not undefined; preserve null/false/0/empty string, do not mutate inputs. Add node:test coverage in config.test.mjs.",
+    "files": { "config.mjs": "export const mergeConfig = (defaults, overrides) => ({ ...defaults, ...overrides });\n" }
+  }
+]
