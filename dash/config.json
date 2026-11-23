@@ -1,0 +1,17 @@
+{
+  "ranPastHandoffContextTokens": 200000,
+  "ranPastHandoffMinimumTurns": 5,
+  "ranPastHandoffFreeReadTokens": 150000,
+  "coldRebuildWriteTokens": 20000,
+  "ttl5mMinutes": 5,
+  "ttl1hMinutes": 60,
+  "oversizedToolResultTokens": 10000,
+  "toolResultCharsPerToken": 0.3,
+  "toolResultImageTokens": 1600,
+  "webSearchUsd": 0.01,
+  "proMonthlyUsd": 20,
+  "agentKitStart": "2026-01-01T00:00:00Z",
+  "openingPartsComparableFrom": "2026-01-01T00:00:00Z",
+  "agentKitChanges": [],
+  "sources": { "claudeHome": "~/.claude", "copilotHomes": ["~/.copilot"] }
+}
