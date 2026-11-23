@@ -1,0 +1,10 @@
+{
+  "name": "agent-kit",
+  "description": "Skills and hooks for cheaper, steadier coding agents: delegate to cheaper models, hand off before context bloats, drive your real Chrome, and UI design and copy rules.",
+  "version": "0.1.0",
+  "author": { "name": "zekis-harness", "url": "https://github.com/zekis-harness" },
+  "homepage": "https://github.com/zekis-harness/agent-kit",
+  "repository": "https://github.com/zekis-harness/agent-kit",
+  "license": "MIT",
+  "keywords": ["skills", "delegation", "handoff", "browser", "ui", "cost"]
+}

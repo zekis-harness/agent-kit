@@ -1,0 +1,56 @@
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: oven-sh/setup-bun@v2
+      - name: PowerShell tests
+        shell: pwsh
+        run: |
+          $failed = 0
+          foreach ($t in Get-ChildItem tests -Filter *.ps1) {
+            Write-Host "== $($t.Name)"
+            pwsh -NoProfile -File $t.FullName
+            if ($LASTEXITCODE -ne 0) { $failed++ }
+          }
+          exit $failed
+      - name: Node tests
+        shell: bash
+        run: |
+          shopt -s nullglob
+          files=(tests/*.test.mjs copilot/extensions/*/*.test.mjs)
+          [ ${#files[@]} -eq 0 ] || node --test "${files[@]}"
+      - name: Dashboard tests
+        if: hashFiles('dash/package.json') != ''
+        working-directory: dash
+        run: bun install --frozen-lockfile && bun test
+      - name: Fresh install
+        shell: pwsh
+        run: |
+          $h = Join-Path ([IO.Path]::GetTempPath()) "zh-home"
+          New-Item -ItemType Directory -Force $h | Out-Null
+          $env:HOME = $h; $env:USERPROFILE = $h; $env:ZEKIS_HARNESS_HOME = Join-Path $h ".zekis-harness"
+          pwsh -NoProfile -File bin/setup.ps1 -Yes -Harnesses claude,codex,copilot -StarterPolicy:$true -NoHooks
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          pwsh -NoProfile -File bin/sync.ps1 -Check
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          foreach ($p in ".claude/skills/delegate/SKILL.md", ".codex/skills/delegate/SKILL.md", ".copilot/skills/delegate/SKILL.md", ".claude/CLAUDE.md") {
+            if (-not (Test-Path (Join-Path $h $p))) { Write-Error "missing $p"; exit 1 }
+          }
