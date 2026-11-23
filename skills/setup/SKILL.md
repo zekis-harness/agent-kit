@@ -52,7 +52,7 @@ If setup prints statusline instructions for the context guard, do them for the u
 
 Fill `profile.md` with what they told you in question 4. Leave sections they skipped empty.
 
-Use either this sync install or the plugin (`/plugin install agent-kit --marketplace zekis-harness/agent-kit`), not both, or each skill appears twice.
+Use either this sync install or the plugin (`/plugin marketplace add zekis-harness/agent-kit` then `/plugin install agent-kit@zekis-harness`), not both, or each skill appears twice.
 
 ## 5. Verify
 

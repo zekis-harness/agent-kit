@@ -20,7 +20,7 @@ The agent checks for git, Node and PowerShell 7, installs what is missing with y
 
 | Agent | Command |
 | --- | --- |
-| Claude Code | `/plugin install agent-kit --marketplace zekis-harness/agent-kit` |
+| Claude Code | `/plugin marketplace add zekis-harness/agent-kit` then `/plugin install agent-kit@zekis-harness` |
 | Codex | `codex plugin marketplace add zekis-harness/agent-kit` then `codex plugin add agent-kit@zekis-harness` |
 | Copilot CLI | `copilot plugin marketplace add zekis-harness/agent-kit` then `copilot plugin install agent-kit@zekis-harness` |
 
