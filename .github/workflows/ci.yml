@@ -25,7 +25,8 @@ jobs:
         shell: pwsh
         run: |
           $failed = 0
-          foreach ($t in Get-ChildItem tests -Filter *.ps1) {
+          # codex-sandbox.ps1 is an opt-in probe that needs the native Codex binary.
+          foreach ($t in Get-ChildItem tests -Filter *.ps1 | Where-Object Name -ne 'codex-sandbox.ps1') {
             Write-Host "== $($t.Name)"
             pwsh -NoProfile -File $t.FullName
             if ($LASTEXITCODE -ne 0) { $failed++ }
